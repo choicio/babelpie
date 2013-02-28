@@ -6,10 +6,9 @@ Created on Feb 5, 2013
 import re
 from operator import attrgetter
 from lucene import *
-from dbwikipagelinks.wikipagelinks import PageLinkGetter, RedirectGetter
 
 class BabelNet():
-    def __init__(self, indicesdir="/home/denis/Soft/babelnet-api-1.1.0/indices/"):
+    def __init__(self, indicesdir):
         lexiconindex = indicesdir + "lexicon"
         graphindex = indicesdir + "graph"
         glossindex = indicesdir + "gloss"
@@ -93,37 +92,6 @@ class BabelNet():
             if m:
                 succacc.append((m.group("id"), m.group("lan"), float(m.group("first")), float(m.group("second"))))
         return succacc
-    
-    #WATCH OUT !!!       THE FOLLOWING METHOD DOESN'T REALLY GET THE BABELNET PREDECESSORS
-    #                    IT GETS JUST WIKIPEDIA PAGES INCOMING INTO THE ARTICLE INSTEAD !!!
-    def getPredecessors(self, cid):
-        conc = self.getConceptById(cid)
-        dbprefix= "http://dbpedia.org/resource/"
-        if conc.onDBpedia:
-            inlinks = PageLinkGetter.getInlinksUrl(conc.url)
-            acc = []
-            for i in inlinks:
-                ide = self.getIdByConcept(i)
-                if ide == None:
-                    url = RedirectGetter.getRedirect(i)
-                    if url != None:
-                        ide = self.getIdByConcept(url)
-                if ide != None:     
-                    ap = (ide, "NN", 0.0, 0.0)
-                    acc.append(ap)
-            return acc
-        else:
-            return []
-        #=======================================================================
-        # q = WildcardQuery(Term("RELATION","*"+cid+"*"))
-        # print cid
-        # docs = self.graph.search(q,50)
-        # acc = []
-        # for doc in docs.scoreDocs:
-        #    doc = self.graph.doc(doc.doc)
-        #    acc.append(doc.get("ID"))
-        # return acc
-        #=======================================================================
             
 class BabelConcept():
     def __init__(self, doc):
@@ -222,11 +190,7 @@ if __name__=="__main__":
     for m in meanings:
         if m.onDBpedia:
             print m.cid
-            #print bn.getPredecessors(m.id)
             for id in bn.getSuccessors(m.id):
                 conc = bn.getConceptById(id[0])
                 print "\t" +str(id) + "\t "+ conc.cid
-            print "Predecessors:"
-            for id in bn.getPredecessors(m.id):
-                print str(id)
         #print bn.getConceptById(id).main_sense
